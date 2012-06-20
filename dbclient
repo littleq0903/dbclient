@@ -1,0 +1,188 @@
+#!/usr/bin/env python
+"""
+Dropbox command-line tool
+"""
+
+from dropbox import client, rest, session
+import sys
+import os
+import json
+
+
+
+APP_KEY = 'tp6catsqdi57imf'
+APP_SECRET = '4s38n0l3446hgvd'
+ACCESS_TYPE = 'dropbox'
+
+USER_ACCESSTOKEN_FILE = os.path.expanduser("~/.dbclient_token")
+CWD_FILE = os.path.expanduser("~/.dbclient_cwd")
+
+COMMANDS = ['cd', 'ls', 'mv', 'cp', 'mkdir', 'pwd']
+COMMANDS += ['info', 'reset', 'debug', 'share', 'get', 'put']
+
+def db_cwd(path=None):
+    if not os.path.exists(CWD_FILE):
+        open(CWD_FILE, 'w').write('/')
+
+    if path:
+        open(CWD_FILE, 'w').write(path)
+    else:
+        return open(CWD_FILE, 'r').read().strip()
+
+
+def login_and_auth():
+    sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
+    token = sess.obtain_request_token()
+    auth_url = sess.build_authorize_url(token)
+    print "Authorizing..."
+    print "Please go to '%s' for authorizing, after finishing press any key to continue..." % auth_url
+    raw_input()
+    access_token = sess.obtain_access_token(token)
+    
+    db_client = client.DropboxClient(sess)
+    access_file = open(USER_ACCESSTOKEN_FILE, "w")
+    access_file.writelines([access_token.key, "\n", access_token.secret])
+    access_file.close()
+
+
+def check_auth():
+    if os.path.exists(USER_ACCESSTOKEN_FILE):
+        return True
+    else:
+        return False
+
+def usage():
+    print """
+Unknown command.
+Commands available: %s
+    """ % (', '.join(COMMANDS))
+
+def to_abs(related_path):
+    if related_path == '..':
+        return os.path.dirname(db_cwd())
+
+    if related_path == '.':
+        return db_cwd()
+
+    if related_path[0] == '/':
+        return related_path
+
+    else:
+        return '/'.join([db_cwd(), related_path])
+
+
+def command_ls(path, detail, db_client):
+    resp = db_client.metadata(path)
+    for file_obj in resp['contents']:
+        filename = file_obj['path'].split('/')[-1]
+        if file_obj['is_dir'] == True:
+            filename += '/'
+        print "%s" % filename
+
+def command_put(local_path, remote_path, db_client):
+    remote_path = to_abs(remote_path)
+    if not remote_path:
+        remote_path = db_cwd()
+    f = open(local_path)
+    metadata = db_client.put_file(remote_path, f)
+    print "Uploaded: %s ==> %s (%s)" %(local_path, remote_path, metadata['size'])
+
+def command_get(remote_path, local_path, db_client):
+    remote_path = to_abs(remote_path)
+    if not local_path:
+        local_path = remote_path.split('/')[-1]
+    f, metadata = db_client.get_file_and_metadata(remote_path)
+    out = open(local_path, 'w')
+    out.write(f.read())
+    print "Downloaded: %s ==> %s (%s)" %(remote_path, local_path, metadata['size'])
+
+def command_info(path, db_client):
+    resp = db_client.metadata(path)
+    print json.dumps(resp)
+
+
+
+if __name__ == '__main__':
+    while not check_auth():
+        login_and_auth()
+
+    access_file = open(USER_ACCESSTOKEN_FILE, 'r')
+    access_key_and_secret = access_file.readlines()
+    sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
+
+    sess.set_token(access_key_and_secret[0].strip(), access_key_and_secret[1])
+    db_client = client.DropboxClient(sess)
+
+    try:
+        command = sys.argv[1]
+    except:
+        usage()
+        sys.exit(1)
+
+
+    if command in COMMANDS:
+        if command == 'ls':
+            path = sys.argv[2] if len(sys.argv) > 2 else db_cwd()
+
+            command_ls(path, False, db_client)
+
+        elif command == 'pwd':
+            print db_cwd()
+
+        elif command == 'cd':
+            path = sys.argv[2] if len(sys.argv) > 2 else '/'
+
+            path = to_abs(path)
+
+            try:
+                metadata = db_client.metadata(path)
+            except:
+                print 'Path: %s does not exist'
+            else:
+                db_cwd(metadata['path'])
+
+
+        elif command == 'put':
+            if len(sys.argv) == 3:
+                remote_path = sys.argv[2]
+                command_put(local_path, '', db_client)
+            elif len(sys.argv) == 4:
+                local_path = sys.argv[3]
+                command_put(local_path, remote_path, db_client)
+            else:
+                usage()
+
+        elif command == 'get':
+            if len(sys.argv) == 3:
+                remote_path = sys.argv[2]
+                command_get(remote_path, '', db_client)
+            elif len(sys.argv) == 4:
+                local_path = sys.argv[3]
+                command_get(remote_path, local_path, db_client)
+            else:
+                usage()
+
+        elif command == 'share':
+            remote_path = sys.argv[2]
+            remote_path = to_abs(remote_path)
+
+            resp = db_client.share(remote_path)
+            print json.dumps(resp)
+
+        elif command == 'debug':
+            command_info(sys.argv[2], db_client)
+
+        elif command == 'reset':
+            os.remove(USER_ACCESSTOKEN_FILE)
+            os.remove(CWD_FILE)
+            print 'Dropbox account has been unlinked.'
+
+        elif command == 'info':
+            resp = db_client.account_info()
+            print json.dumps(resp)
+
+
+    else:
+        usage()
+
+
