@@ -58,6 +58,9 @@ Commands available: %s
     """ % (', '.join(COMMANDS))
 
 def to_abs(related_path):
+    if related_path == '':
+        return db_cwd()
+
     if related_path == '..':
         return os.path.dirname(db_cwd())
 
@@ -81,8 +84,13 @@ def command_ls(path, detail, db_client):
 
 def command_put(local_path, remote_path, db_client):
     remote_path = to_abs(remote_path)
-    if not remote_path:
-        remote_path = db_cwd()
+    try:
+        resp = db_client.metadata(remote_path)
+    except:
+        pass
+    else:
+        if resp['is_dir']:
+            remote_path = '/'.join([remote_path, os.path.basename(local_path)])
     f = open(local_path)
     metadata = db_client.put_file(remote_path, f)
     print "Uploaded: %s ==> %s (%s)" %(local_path, remote_path, metadata['size'])
@@ -144,10 +152,11 @@ if __name__ == '__main__':
 
         elif command == 'put':
             if len(sys.argv) == 3:
-                remote_path = sys.argv[2]
+                local_path = sys.argv[2]
                 command_put(local_path, '', db_client)
             elif len(sys.argv) == 4:
-                local_path = sys.argv[3]
+                local_path = sys.argv[2]
+                remote_path = sys.argv[3]
                 command_put(local_path, remote_path, db_client)
             else:
                 usage()
