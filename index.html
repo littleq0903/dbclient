@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <title>Dbclient by littleq0903</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Dbclient</h1>
+        <h2>Command-line tool for Dropbox</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/littleq0903/dbclient/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/littleq0903/dbclient/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/littleq0903/dbclient" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>DBClient</h1>
+
+<p>Command-line tool for Dropbox accessing</p>
+
+<h2>Installation</h2>
+
+<ol>
+<li><code>git clone git@github.com:littleq0903/dbclient.git</code></li>
+<li><code>cd dbclient</code></li>
+<li><code>sudo pip install -r requirements.txt</code></li>
+<li>Move <code>dbclient</code> to any directory which is under your <code>PATH</code>. (e.g. <code>sudo cp dbclient /usr/local/bin</code>)</li>
+</ol><h2>Usage</h2>
+
+<ul>
+<li>
+<code>dbclient ls [&lt;remote-path&gt;]</code>: listing files</li>
+<li>
+<code>dbclient cd [&lt;remote-path&gt;]</code>: change the current working remote directory.</li>
+<li>
+<code>dbclient pwd</code>: show current working directory</li>
+<li>
+<code>dbclient get &lt;remote-path&gt; [&lt;local-path&gt;]</code>: download a file</li>
+<li>
+<code>dbclient put &lt;local-path&gt; [&lt;remote-path&gt;]</code>: upload a file</li>
+<li>
+<code>dbclient share &lt;remote-path&gt;</code>: get a public link for a file</li>
+<li>
+<code>dbclient info</code>: show account info</li>
+<li>
+<code>dbclient reset</code>: reset the authentication status</li>
+</ul><h2>Contribution</h2>
+
+<p>Contribution and advises are welcome.</p>
+
+<ul>
+<li>Author: LittleQ</li>
+<li>E-Mail: <a href="mailto:littleq0903@gmail.com">littleq0903@gmail.com</a>
+</li>
+</ul>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
